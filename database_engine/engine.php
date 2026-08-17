@@ -1,33 +1,42 @@
 <?php
 
-include_once dirname(__FILE__) . '/' . '../components/utils/event.php';
-include_once dirname(__FILE__) . '/' . '../components/utils/sm_datetime.php';
-include_once dirname(__FILE__) . '/' . 'commands.php';
-include_once dirname(__FILE__) . '/' . 'select_command.php';
+require_once dirname(__FILE__) . '/../components/utils/event.php';
+require_once dirname(__FILE__) . '/../components/utils/sm_datetime.php';
+require_once dirname(__FILE__) . '/commands.php';
+require_once dirname(__FILE__) . '/select_command.php';
 
+/**
+ * Exception thrown when a SQL error occurs
+ */
 class SMSQLException extends Exception {
-    public function __construct($message) {
-        parent::__construct($message);
+    public function __construct($message, $code = 0, ?Exception $previous = null) {
+        parent::__construct($message, $code, $previous);
     }
 }
 
-class SMQueryReturnsNoRowsException extends Exception {
-    public function __construct($message) {
-        parent::__construct($message);
+/**
+ * Exception thrown when a query returns no rows
+ */
+class SMQueryReturnsNoRowsException extends SMSQLException {
+    public function __construct($message, $code = 0, ?Exception $previous = null) {
+        parent::__construct($message, $code, $previous);
     }
 }
 
 /** @var IEngConnection[] $connectionPool  */
-$connectionPool = array();
+$connectionPool = [];
 
 register_shutdown_function('FinalizeConnectionPool');
 
-function FinalizeConnectionPool() {
-
+/**
+ * Disconnect all connections from the pool on shutdown
+ */
+function FinalizeConnectionPool(): void {
     global $connectionPool;
 
-    foreach ($connectionPool as $hash => $connection)
+    foreach ($connectionPool as $hash => $connection) {
         $connection->Disconnect();
+    }
 }
 
 interface IEngDataReader {
@@ -35,22 +44,26 @@ interface IEngDataReader {
     /**
      * @throws SMSQLException
      */
-    function Open();
+    public function Open(): void;
+    
     /**
      * @return bool
      */
-    function Next();
-    function Close();
-    function FieldCount();
-    function GetField($index);
+    public function Next(): bool;
+    
+    public function Close(): void;
+    
+    public function FieldCount(): int;
+    
+    public function GetField($index);
 
-    function AddFieldInfo(FieldInfo $fieldInfo);
+    public function AddFieldInfo(FieldInfo $fieldInfo): void;
 
     /**
      * @param string $fieldName
      * @return mixed
      */
-    function GetFieldValueByName($fieldName);
+    public function GetFieldValueByName($fieldName);
 }
 
 interface IEngConnection {
@@ -58,18 +71,18 @@ interface IEngConnection {
      * @param string $sql
      * @return IEngDataReader
      */
-    public function CreateDataReader($sql);
+    public function CreateDataReader($sql): IEngDataReader;
 
     /**
      * @return bool
      */
-    public function Connected();
+    public function Connected(): bool;
 
     /**
      * @param string $sql
      * @return void
      */
-    public function ExecSQL($sql);
+    public function ExecSQL($sql): void;
 
     /**
      * @param string $sql
@@ -83,22 +96,22 @@ interface IEngConnection {
      * @param array $array
      * @throws SMSQLException
      */
-    public function ExecQueryToArray($sql, &$array);
+    public function ExecQueryToArray($sql, &$array): void;
 
     /**
      * @return void
      */
-    public function Connect();
+    public function Connect(): void;
 
     /**
      * @return void
      */
-    public function Disconnect();
+    public function Disconnect(): void;
 
     /**
      * @return bool
      */
-    public function SupportsLastInsertId();
+    public function SupportsLastInsertId(): bool;
 
     /**
      * @return mixed
@@ -108,17 +121,17 @@ interface IEngConnection {
     /**
      * @return string
      */
-    public function LastError();
+    public function LastError(): string;
 
     /**
      * @return void
      */
-    public function commitTransaction();
+    public function commitTransaction(): void;
 
     /**
      * @return SMVersion
      */
-    public function GetServerVersion();
+    public function GetServerVersion(): SMVersion;
 }
 
 abstract class ConnectionFactory
@@ -126,7 +139,7 @@ abstract class ConnectionFactory
     /**
      * @var ConnectionFactory[]
      */
-    private static $instances = array();
+    private static array $instances = [];
 
     protected function __construct()
     {
@@ -135,7 +148,7 @@ abstract class ConnectionFactory
     /**
      * @return ConnectionFactory
      */
-    public static function getInstance()
+    public static function getInstance(): ConnectionFactory
     {
         $className = get_called_class();
         if (!array_key_exists($className, self::$instances)) {
@@ -146,25 +159,22 @@ abstract class ConnectionFactory
     }
 
     /** @var EngConnection */
-    private $masterConnection;
+    private ?EngConnection $masterConnection = null;
 
-    private function GetConnectionParamsHash($connectionParams) {
+    private function GetConnectionParamsHash(array $connectionParams): string {
         $result = '';
         foreach ($connectionParams as $value) {
             $result .= $value;
         }
         $result .= get_class($this);
-        if (function_exists('md5'))
-            return md5($result);
-        else
-            return $result;
+        return function_exists('md5') ? md5($result) : $result;
     }
 
     /**
-     * @param $connectionParams
+     * @param array $connectionParams
      * @return EngConnection
      */
-    public final function CreateConnection($connectionParams) {
+    public final function CreateConnection(array $connectionParams): EngConnection {
         global $connectionPool;
 
         $paramsHash = $this->GetConnectionParamsHash($connectionParams);
@@ -181,7 +191,7 @@ abstract class ConnectionFactory
      * @param array $connectionParams
      * @return EngConnection
      */
-    public abstract function DoCreateConnection($connectionParams);
+    public abstract function DoCreateConnection(array $connectionParams);
 
     /**
      * @abstract
@@ -196,48 +206,48 @@ abstract class ConnectionFactory
      */
     public abstract function CreateEngCommandImp();
 
-    public function CreateSelectCommand() {
+    public function CreateSelectCommand(): SelectCommand {
         return new SelectCommand($this->CreateEngCommandImp());
     }
 
-    public function CreateUpdateCommand() {
+    public function CreateUpdateCommand(): UpdateCommand {
         return new UpdateCommand($this->CreateEngCommandImp());
     }
 
-    public function CreateInsertCommand() {
+    public function CreateInsertCommand(): InsertCommand {
         return new InsertCommand($this->CreateEngCommandImp());
     }
 
-    public function CreateDeleteCommand() {
+    public function CreateDeleteCommand(): DeleteCommand {
         return new DeleteCommand($this->CreateEngCommandImp());
     }
 
-    public function CreateCustomSelectCommand($sql) {
+    public function CreateCustomSelectCommand($sql): CustomSelectCommand {
         return new CustomSelectCommand($this->CreateEngCommandImp(), $sql);
     }
 
-    public function CreateCustomUpdateCommand($sql) {
+    public function CreateCustomUpdateCommand($sql): BaseUpdateCommand {
         if (is_array($sql))
             return new MultiStatementUpdateCommand($sql, $this->CreateEngCommandImp());
         else
             return new CustomUpdateCommand($sql, $this->CreateEngCommandImp());
     }
 
-    public function CreateCustomInsertCommand($sql) {
+    public function CreateCustomInsertCommand($sql): BaseInsertCommand {
         if (is_array($sql))
             return new MultiStatementInsertCommand($sql, $this->CreateEngCommandImp());
         else
             return new CustomInsertCommand($sql, $this->CreateEngCommandImp());
     }
 
-    public function CreateCustomDeleteCommand($sql) {
+    public function CreateCustomDeleteCommand($sql): BaseDeleteCommand {
         if (is_array($sql))
             return new MultiStatementDeleteCommand($sql, $this->CreateEngCommandImp());
         else
             return new CustomDeleteCommand($sql, $this->CreateEngCommandImp());
     }
 
-    public function GetMasterConnection() {
+    public function GetMasterConnection(): ?EngConnection {
         return $this->masterConnection;
     }
 }

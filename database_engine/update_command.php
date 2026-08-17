@@ -53,7 +53,7 @@ class MultiStatementUpdateCommand extends EngCommand
     {
         $result = '';
         foreach($this->updateCommands as $updateCommand)
-            AddStr($result, $updateCommand->GetSQL(), ' ');
+            StringUtils::AddStr($result, $updateCommand->GetSQL(), ' ');
         return $result;
     }
 
@@ -269,7 +269,7 @@ class UpdateCommand extends BaseUpdateCommand
     {
         $result = '';
         foreach($this->GetValues() as $fieldName => $value)
-            AddStr($result, $this->GetSetFieldValueClause($fieldName), ', ');
+            StringUtils::AddStr($result, $this->GetSetFieldValueClause($fieldName), ', ');
         return $result;
     }
 
@@ -277,7 +277,7 @@ class UpdateCommand extends BaseUpdateCommand
     {
         $result = '';
         foreach($this->GetKeyFieldValues() as $fieldName => $value)
-            AddStr($result,
+            StringUtils::AddStr($result,
                 $this->GetCommandImp()->GetFilterConditionGenerator()->CreateCondition(
                         new FieldFilter($value, '='), $this->GetFieldByName($fieldName)
                         ), ' AND ');

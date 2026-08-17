@@ -123,7 +123,7 @@ abstract class GridState
         $result = array();
 
         foreach ($exceptions as $exception) {
-            if ($exception instanceOf AbstractLocalizedException) {
+            if ($exception instanceof AbstractLocalizedException) {
                 $message = $exception->getLocalizedMessage(
                     $this->grid->GetPage()->GetLocalizerCaptions()
                 );

@@ -96,7 +96,7 @@ class ConditionalFilterGroup extends FilterGroup
     public function hasDisabledChild()
     {
         foreach ($this->getChildren() as $child) {
-            if ($child instanceOf ConditionalFilterGroup && $child->hasDisabledChild() || !$child->isEnabled())
+            if ($child instanceof ConditionalFilterGroup && $child->hasDisabledChild() || !$child->isEnabled())
                 return true;
         }
         return false;

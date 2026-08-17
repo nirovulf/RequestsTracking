@@ -304,7 +304,7 @@ class FilterConditionGenerator {
             $this->CreateCondition($filter->InnerFilter, $this->field)
         );
 
-        if ($filter->InnerFilter instanceOf FieldFilter
+        if ($filter->InnerFilter instanceof FieldFilter
             && (
                 $filter->InnerFilter->GetFilterType() == 'LIKE'
                 || $filter->InnerFilter->GetFilterType() == 'ILIKE'
@@ -332,7 +332,7 @@ class FilterConditionGenerator {
             );
 
             if (!empty($condition)) {
-                AddStr($this->resultCondition,
+                StringUtils::AddStr($this->resultCondition,
                 '(' . $condition . ')',
                 ' ' . $filter->GetFilterLinkType() . ' ');
             }
@@ -719,7 +719,7 @@ abstract class EngCommandImp
         $result = '';
         $parts = StringUtils::SplitString('.', $identifier);
         foreach($parts as $part)
-            AddStr($result,
+            StringUtils::AddStr($result,
                 StringUtils::NormalizeQuotation($part,
                     $this->GetFirstQuoteChar(), $this->GetLastQuoteChar()),
                 '.');
