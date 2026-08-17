@@ -45,7 +45,7 @@ class MultiStatementDeleteCommand extends EngCommand
     {
         $result = '';
         foreach($this->deleteCommands as $deleteCommand)
-            AddStr($result, $deleteCommand->GetSQL(), ' ');
+            StringUtils::AddStr($result, $deleteCommand->GetSQL(), ' ');
         return $result;
     }
     // </Query Building>    
@@ -162,7 +162,7 @@ class DeleteCommand extends EngCommand
         $result = '';
         foreach($this->keyFieldValues as $fieldName => $value)
         {
-            AddStr($result,
+            StringUtils::AddStr($result,
                 $this->GetCommandImp()->GetFilterConditionGenerator()->CreateCondition(
                     new FieldFilter($value, '='), $this->GetFieldByName($fieldName)
                     ), ' AND ');

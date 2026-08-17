@@ -39,7 +39,7 @@ class MultiStatementInsertCommand extends EngCommand
     {
         $result = '';
         foreach($this->insertCommands as $insertCommand)
-            AddStr($result, $insertCommand->GetSQL(), ' ');
+            StringUtils::AddStr($result, $insertCommand->GetSQL(), ' ');
         return $result;
     }
 
@@ -195,7 +195,7 @@ class InsertCommand extends EngCommand
         {
             if ($this->IsFieldValueSettedToDefault($fieldName) & !$this->GetCommandImp()->SupportsDefaultValue())
                 continue;
-            AddStr(
+            StringUtils::AddStr(
                 $result,
                 $this->GetCommandImp()->GetFieldValueForInsert(
                     $this->GetFieldByName($fieldName), $value, $this->IsFieldValueSettedToDefault($fieldName)
@@ -213,7 +213,7 @@ class InsertCommand extends EngCommand
         {
             if ($this->IsFieldValueSettedToDefault($fieldName) & !$this->GetCommandImp()->SupportsDefaultValue())
                 continue;
-            AddStr($result, $this->GetCommandImp()->GetFieldFullName($this->GetFieldByName($fieldName)), ', ');
+            StringUtils::AddStr($result, $this->GetCommandImp()->GetFieldFullName($this->GetFieldByName($fieldName)), ', ');
         }
         return $result;
     }
